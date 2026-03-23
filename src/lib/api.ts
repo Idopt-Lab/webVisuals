@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = import.meta.env.DEV ? '/api' : 'https://api.idoptlab.com/api';
 
 let geojsonCache: GeoJSON.FeatureCollection | null = null;
 
