@@ -1,0 +1,26 @@
+---
+title: Overview
+description: Data update guide for the Web Visuals map and API pipeline
+---
+
+This guide is for Grant, Zhou, and anyone updating TSAM county data used by the map.
+
+## What this covers
+
+- How to refresh existing yearly and metric data.
+- How to add entirely new metrics.
+- Where data must live so the deployed app can read it.
+- How docs from this repo are auto-synced to the central docs repo.
+
+## Data flow
+
+1. Generate processed files from the TSAM pipeline.
+2. Publish processed outputs to `visualsApi/public/data`.
+3. Serve data through `https://api.idoptlab.com/api/...`.
+4. Render in `visualWeb` frontend (`visualWeb/src/lib/api.ts`).
+
+## Start here
+
+- For standard refreshes: see [Data Update Playbook](/guides/data-update-playbook).
+- For new metrics and schema additions: see [New Metric Checklist](/guides/new-metric-checklist).
+- For docs publishing automation: see [Docs Publishing (CI/CD)](/guides/docs-publishing-cicd).

@@ -1,0 +1,90 @@
+---
+title: Data Update Playbook
+description: Step-by-step process for Grant/Zhou to publish updated map data
+---
+
+Use this when you are updating existing metrics (same schema, newer values).
+
+## Goal
+
+Generate fresh processed data and publish it so `visualWeb` immediately reads it from `visualsApi`.
+
+## Required output bundle
+
+The API expects this structure under `public/data`:
+
+- `yearly/<year>.json` for every year in scope
+- `columnar/*.npy` files
+- `columnar/metadata.json`
+- `columnar/fips_order.json`
+- `fips_lookup.json`
+- `us_counties.geojson`
+
+## Step 1: Regenerate processed files
+
+From the TSAM pipeline:
+
+```bash
+cd /Users/columbus/Development/idopt/matlabtoPythonTask/TSAMWPScripts/data_server
+python preprocess_data.py
+```
+
+This writes to:
+
+`/Users/columbus/Development/idopt/matlabtoPythonTask/TSAMWPScripts/data_server/processed`
+
+## Step 2: Copy into visualsApi
+
+```bash
+rsync -av --delete \
+  /Users/columbus/Development/idopt/matlabtoPythonTask/TSAMWPScripts/data_server/processed/ \
+  /Users/columbus/Development/idopt/visualsApi/public/data/
+```
+
+## Step 3: Quick API checks
+
+```bash
+cd /Users/columbus/Development/idopt/visualsApi
+npm run dev
+```
+
+In another terminal:
+
+```bash
+curl -s http://127.0.0.1:8787/api/years
+curl -s http://127.0.0.1:8787/api/metrics
+curl -s http://127.0.0.1:8787/api/data/2020 | head -c 200
+```
+
+## Step 4: Quick frontend check
+
+```bash
+cd /Users/columbus/Development/idopt/visualWeb
+npm run dev
+```
+
+Move the year slider and metric selector to verify map updates and tooltip values.
+
+## Step 5: Commit and push
+
+Data file updates should be committed in:
+
+- `visualsApi` for `public/data/*`
+- `visualWeb` only if frontend logic changed
+
+## Step 6: Deploy API
+
+```bash
+cd /Users/columbus/Development/idopt/visualsApi
+npm run deploy
+```
+
+Production endpoint:
+
+`https://api.idoptlab.com/api`
+
+## Common gotchas
+
+- Keep FIPS as zero-padded 5-character strings.
+- Keep `metadata.json` years and metric names aligned with files that exist.
+- If any metric key name changes, update frontend mappings (see New Metric Checklist).

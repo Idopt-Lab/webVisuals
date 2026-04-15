@@ -1,0 +1,93 @@
+name: Sync Docs to Mintlify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+  workflow_dispatch:
+
+env:
+  REPO_SLUG: web-visuals
+  REPO_TAB_LABEL: Web Visuals
+
+jobs:
+  sync-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get changed/added/deleted files in docs/
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            find docs/ -type f > changed_docs.txt
+            touch deleted_docs.txt
+          else
+            git diff --name-only --diff-filter=ACM HEAD~1 HEAD -- docs/ > changed_docs.txt
+            git diff --name-only --diff-filter=D  HEAD~1 HEAD -- docs/ > deleted_docs.txt
+          fi
+          echo "Changed/added docs:"; cat changed_docs.txt
+          echo "Deleted docs:";       cat deleted_docs.txt
+
+      - name: Checkout Mintlify docs repo
+        uses: actions/checkout@v4
+        with:
+          repository: Idopt-Lab/idopt-docs
+          token: ${{ secrets.DOCS_PUSH_TOKEN }}
+          path: mintlify-docs
+
+      - name: Clean up misplaced root-level synced files (all docs, not just changed)
+        run: |
+          find docs/ -type f | while IFS= read -r file; do
+            rel_path="${file#docs/}"
+            misplaced="mintlify-docs/$rel_path"
+            if [ -f "$misplaced" ]; then
+              rm "$misplaced"
+              echo "Removed misplaced: $misplaced"
+            fi
+          done
+
+      - name: Copy new/changed docs to Mintlify repo (under repo subfolder)
+        run: |
+          while IFS= read -r file; do
+            if [ -f "$file" ]; then
+              rel_path="${file#docs/}"
+              dest_dir="mintlify-docs/$REPO_SLUG/$(dirname "$rel_path")"
+              mkdir -p "$dest_dir"
+              cp "$file" "mintlify-docs/$REPO_SLUG/$rel_path"
+              echo "Synced: $file -> mintlify-docs/$REPO_SLUG/$rel_path"
+            fi
+          done < changed_docs.txt
+
+      - name: Delete removed docs from Mintlify repo
+        run: |
+          while IFS= read -r file; do
+            rel_path="${file#docs/}"
+            target="mintlify-docs/$REPO_SLUG/$rel_path"
+            if [ -f "$target" ]; then
+              rm "$target"
+              echo "Deleted: $target"
+            fi
+          done < deleted_docs.txt
+
+      - name: Update docs.json navigation and branding
+        run: |
+          cd mintlify-docs
+          python3 $GITHUB_WORKSPACE/.github/scripts/update_docs_nav.py
+
+      - name: Commit and push to Mintlify docs repo
+        run: |
+          cd mintlify-docs
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to push."
+          else
+            git commit -m "chore: sync docs from $REPO_SLUG"
+            git push
+          fi

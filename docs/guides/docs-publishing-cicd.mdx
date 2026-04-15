@@ -1,0 +1,41 @@
+---
+title: Docs Publishing (CI/CD)
+description: How docs from visualWeb auto-sync to the central idopt-docs repo
+---
+
+`visualWeb` now has automated docs sync, same pattern as your other repos.
+
+## Trigger
+
+Workflow file:
+
+`/Users/columbus/Development/idopt/visualWeb/.github/workflows/sync-docs.yml`
+
+It runs when:
+
+- a commit to `main` changes anything under `docs/**`
+- manual run from GitHub Actions (`workflow_dispatch`)
+
+## What it does
+
+1. Detects changed and deleted files under `docs/`.
+2. Checks out `Idopt-Lab/idopt-docs`.
+3. Copies docs into `idopt-docs/web-visuals/...`.
+4. Updates Mintlify `docs.json` navigation using:
+   `visualWeb/.github/scripts/update_docs_nav.py`
+5. Commits and pushes to `idopt-docs`.
+
+## Required secret
+
+In `visualWeb` GitHub repo settings, add:
+
+- `DOCS_PUSH_TOKEN` (PAT with write access to `Idopt-Lab/idopt-docs`)
+
+Without this secret, sync will fail on push.
+
+## How Grant/Zhou should use it
+
+1. Edit docs in `visualWeb/docs/*.mdx`.
+2. Merge to `main`.
+3. Confirm `Sync Docs to Mintlify` passed in Actions.
+4. Verify the updated pages appear in the central docs site.

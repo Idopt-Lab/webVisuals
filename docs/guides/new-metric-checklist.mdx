@@ -1,0 +1,64 @@
+---
+title: New Metric Checklist
+description: What to change when adding a brand-new metric to the map
+---
+
+Use this when adding new fields, not just refreshing values.
+
+## 1. Add metric to data generation
+
+Update preprocessing so the new metric is written in both formats:
+
+- `yearly/<year>.json` entries
+- `columnar/<metric>.npy`
+
+Also add metric name to:
+
+- `columnar/metadata.json` (`metrics` list)
+
+## 2. Publish updated data files
+
+Copy processed output into:
+
+`/Users/columbus/Development/idopt/visualsApi/public/data`
+
+Then run local checks:
+
+```bash
+cd /Users/columbus/Development/idopt/visualsApi
+npm run dev
+curl -s http://127.0.0.1:8787/api/metrics
+curl -s http://127.0.0.1:8787/api/columnar/<metric>?year=2020 | head -c 200
+```
+
+## 3. Update frontend metric definitions
+
+In `visualWeb`, update:
+
+- `src/lib/colors.ts` (`METRICS` label + formatting)
+- `src/lib/api.ts` (`CountyRecord` type if yearly payload adds field)
+
+If display behavior changes, also review:
+
+- `src/components/map/Tooltip.tsx`
+- `src/components/map/ScaleLegend.tsx`
+
+## 4. Validate UI behavior
+
+```bash
+cd /Users/columbus/Development/idopt/visualWeb
+npm run dev
+```
+
+Confirm:
+
+- Metric appears in dropdown.
+- Choropleth colors render (no all-gray fallback).
+- Tooltip shows expected value formatting.
+
+## 5. Merge order
+
+1. Merge `visualsApi` data/API changes first.
+2. Merge `visualWeb` metric UI changes second.
+
+This prevents production UI from querying a metric that the API does not yet serve.
