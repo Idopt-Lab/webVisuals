@@ -93,7 +93,7 @@ export function buildAirRouteLayers(routes: AirRoute[], onHover: (info: any) => 
     greatCircle: true,
     getSourcePosition: (d) => [d.origin_lon, d.origin_lat],
     getTargetPosition: (d) => [d.dest_lon, d.dest_lat],
-    getWidth: (d) => Math.max(1, Math.log10(routeWeight(d) + 1) * 1.7),
+    getWidth: (d) => Math.max(0.5, Math.log10(routeWeight(d) + 1) * 0.85),
     getSourceColor: [0, 200, 90, 200],
     getTargetColor: [60, 120, 255, 180],
     onHover,
