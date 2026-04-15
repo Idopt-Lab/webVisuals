@@ -31,3 +31,34 @@ export async function fetchYearData(year: number): Promise<CountyDataMap> {
   const res = await fetch(`${BASE}/data/${year}`);
   return res.json();
 }
+
+export type MapType = 'counties' | 'air_routes' | 'road_routes';
+
+export interface AirRoute {
+  origin: string;
+  dest: string;
+  origin_lat: number;
+  origin_lon: number;
+  dest_lat: number;
+  dest_lon: number;
+  origin_city: string;
+  origin_state: string;
+  dest_city: string;
+  dest_state: string;
+  seats_supply: number;
+  pax_supply: number;
+  load_factor: number;
+}
+
+export interface AirRoutesResponse {
+  name: string;
+  quarter: number;
+  count: number;
+  returned: number;
+  routes: AirRoute[];
+}
+
+export async function fetchAirRoutes(limit = 350): Promise<AirRoutesResponse> {
+  const res = await fetch(`${BASE}/routes/air?limit=${limit}`);
+  return res.json();
+}
