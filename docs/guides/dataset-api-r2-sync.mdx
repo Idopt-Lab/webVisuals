@@ -1,0 +1,87 @@
+---
+title: Dataset API (Create + R2 Sync)
+description: Create a new dataset and sync assets into R2 using visualsApi endpoints
+---
+
+This guide documents the dataset endpoints in `visualsApi` for creating new datasets and syncing assets to R2.
+
+Base URL (prod): `https://api.idoptlab.com/api`
+
+All write operations require:
+
+`Authorization: Bearer <API_KEY>`
+
+## 1. Create a new dataset (JSON/text payload)
+
+`POST /api/datasets`
+
+```bash
+curl -X POST "https://api.idoptlab.com/api/datasets" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "routes/air/t100_2025_q1_top500.json",
+    "content": "{\"name\":\"demo\",\"routes\":[]}",
+    "content_type": "application/json"
+  }'
+```
+
+## 2. Create a new dataset (base64 payload)
+
+`POST /api/datasets`
+
+```bash
+PAYLOAD_BASE64=$(base64 < ./my_binary_file.bin | tr -d '\n')
+
+curl -X POST "https://api.idoptlab.com/api/datasets" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"key\": \"uploads/my_binary_file.bin\",
+    \"content_base64\": \"$PAYLOAD_BASE64\",
+    \"content_type\": \"application/octet-stream\"
+  }"
+```
+
+## 3. Sync bundled assets into R2
+
+Use this when a file already exists under `visualsApi/public/data/...` and you want it copied into R2.
+
+`POST /api/datasets/sync-assets`
+
+```bash
+curl -X POST "https://api.idoptlab.com/api/datasets/sync-assets" \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "items": [
+      {
+        "asset_path": "/data/routes/t100_2025_q1_top500.json",
+        "key": "routes/air/t100_2025_q1_top500.json",
+        "content_type": "application/json"
+      }
+    ]
+  }'
+```
+
+## 4. List, fetch, and delete datasets
+
+```bash
+# list
+curl -H "Authorization: Bearer $API_KEY" \
+  "https://api.idoptlab.com/api/datasets"
+
+# download
+curl "https://api.idoptlab.com/api/datasets/routes/air/t100_2025_q1_top500.json"
+
+# delete
+curl -X DELETE \
+  -H "Authorization: Bearer $API_KEY" \
+  "https://api.idoptlab.com/api/datasets/routes/air/t100_2025_q1_top500.json"
+```
+
+## Notes
+
+- `POST /api/datasets` is best for brand-new payloads from scripts/tools.
+- `POST /api/datasets/sync-assets` is best for promoting bundled static assets into R2.
+- Existing raw upload endpoint remains available: `PUT /api/datasets/{key}`.
