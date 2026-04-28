@@ -1,4 +1,4 @@
-import { ArcLayer, GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { ArcLayer, GeoJsonLayer, ScatterplotLayer, TextLayer } from '@deck.gl/layers';
 import { sequentialColor, NO_DATA_COLOR } from '@/lib/colors';
 import type { AirRoute, CountyDataMap, OdRoute } from '@/lib/api';
 
@@ -139,7 +139,24 @@ export function buildOdRouteLayers(pairs: OdRoute[], onHover: (info: any) => voi
     onHover,
   });
 
-  return [arcs, airports];
+  const labels = new TextLayer<OdNode>({
+    id: 'od-labels',
+    data: [...nodes.values()],
+    getPosition: (d) => [d.lon, d.lat],
+    getText: (d) => d.code,
+    getSize: 13,
+    getColor: [255, 255, 255, 240],
+    getBackgroundColor: [0, 0, 0, 160],
+    background: true,
+    backgroundPadding: [3, 2, 3, 2],
+    getTextAnchor: 'middle',
+    getAlignmentBaseline: 'bottom',
+    getPixelOffset: [0, -18],
+    fontWeight: 'bold',
+    fontFamily: 'monospace',
+  });
+
+  return [arcs, airports, labels];
 }
 
 export function buildAirRouteLayers(routes: AirRoute[], onHover: (info: any) => void) {
