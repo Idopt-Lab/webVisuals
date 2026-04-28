@@ -4,10 +4,10 @@ import { Map } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { INITIAL_VIEW_STATE, MAP_STYLE } from './constants';
-import { buildAirRouteLayers, buildChoroplethLayer } from './layers';
+import { buildAirRouteLayers, buildChoroplethLayer, buildOdRouteLayers } from './layers';
 import Tooltip from './Tooltip';
 import type { MetricConfig } from '@/lib/colors';
-import type { AirRoute, CountyDataMap, MapType } from '@/lib/api';
+import type { AirRoute, CountyDataMap, MapType, OdRoute } from '@/lib/api';
 
 interface MapViewProps {
   metric: MetricConfig;
@@ -15,6 +15,7 @@ interface MapViewProps {
   data: CountyDataMap | null;
   mapType: MapType;
   airRoutes: AirRoute[] | null;
+  odPairs: OdRoute[] | null;
 }
 
 interface HoverInfo {
@@ -24,7 +25,7 @@ interface HoverInfo {
   lines: string[];
 }
 
-export default function MapView({ metric, geoJson, data, mapType, airRoutes }: MapViewProps) {
+export default function MapView({ metric, geoJson, data, mapType, airRoutes, odPairs }: MapViewProps) {
   const [hoverInfo, setHoverInfo] = useState<HoverInfo | null>(null);
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const deckRef = useRef<any>(null);
@@ -75,15 +76,11 @@ export default function MapView({ metric, geoJson, data, mapType, airRoutes }: M
 
   const onAirHover = useCallback((info: any) => {
     const obj = info.object;
-    if (!obj) {
-      setHoverInfo(null);
-      return;
-    }
-    if ('origin' in obj && 'dest' in obj) {
+    if (!obj) { setHoverInfo(null); return; }
+    if ('origin' in obj && 'dest' in obj && 'seats_supply' in obj) {
       const r = obj as AirRoute;
       setHoverInfo({
-        x: info.x,
-        y: info.y,
+        x: info.x, y: info.y,
         title: `${r.origin} → ${r.dest}`,
         lines: [
           `Seats: ${r.seats_supply.toLocaleString()}`,
@@ -95,8 +92,7 @@ export default function MapView({ metric, geoJson, data, mapType, airRoutes }: M
     }
     if ('code' in obj) {
       setHoverInfo({
-        x: info.x,
-        y: info.y,
+        x: info.x, y: info.y,
         title: `${obj.code}`,
         lines: [`Network volume: ${Math.round(obj.volume).toLocaleString()}`],
       });
@@ -105,9 +101,43 @@ export default function MapView({ metric, geoJson, data, mapType, airRoutes }: M
     setHoverInfo(null);
   }, []);
 
-  const layers = mapType === 'counties'
-    ? (geoJson && data ? [buildChoroplethLayer(geoJson, data, metric.key, onCountyHover)] : [])
-    : (mapType === 'air_routes' && airRoutes ? buildAirRouteLayers(airRoutes, onAirHover) : []);
+  const onOdHover = useCallback((info: any) => {
+    const obj = info.object;
+    if (!obj) { setHoverInfo(null); return; }
+    if ('airfare' in obj) {
+      const p = obj as OdRoute;
+      setHoverInfo({
+        x: info.x, y: info.y,
+        title: `${p.origin} → ${p.dest}`,
+        lines: [
+          `${p.origin_city}, ${p.origin_state} → ${p.dest_city}, ${p.dest_state}`,
+          `Distance: ${p.dist_miles} mi`,
+          `Airfare: $${p.airfare.toFixed(2)}`,
+          `Frequency: ${p.flight_freq} flights/day`,
+          `Sched. delay: ${p.sch_delay} min`,
+        ],
+      });
+      return;
+    }
+    if ('code' in obj) {
+      setHoverInfo({
+        x: info.x, y: info.y,
+        title: obj.code,
+        lines: [`${obj.count} route${obj.count !== 1 ? 's' : ''}`],
+      });
+      return;
+    }
+    setHoverInfo(null);
+  }, []);
+
+  const layers =
+    mapType === 'counties'
+      ? geoJson && data ? [buildChoroplethLayer(geoJson, data, metric.key, onCountyHover)] : []
+      : mapType === 'air_routes' && airRoutes
+        ? buildAirRouteLayers(airRoutes, onAirHover)
+        : mapType === 'od_routes' && odPairs
+          ? buildOdRouteLayers(odPairs, onOdHover)
+          : [];
 
   return (
     <DeckGL

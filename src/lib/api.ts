@@ -32,7 +32,7 @@ export async function fetchYearData(year: number): Promise<CountyDataMap> {
   return res.json();
 }
 
-export type MapType = 'counties' | 'air_routes' | 'road_routes';
+export type MapType = 'counties' | 'air_routes' | 'road_routes' | 'od_routes';
 
 export interface AirRoute {
   origin: string;
@@ -60,5 +60,33 @@ export interface AirRoutesResponse {
 
 export async function fetchAirRoutes(limit = 350): Promise<AirRoutesResponse> {
   const res = await fetch(`${BASE}/routes/air?limit=${limit}`);
+  return res.json();
+}
+
+export interface OdRoute {
+  origin: string;
+  dest: string;
+  origin_lat: number;
+  origin_lon: number;
+  origin_city: string;
+  origin_state: string;
+  dest_lat: number;
+  dest_lon: number;
+  dest_city: string;
+  dest_state: string;
+  dist_miles: number;
+  airfare: number;
+  flight_freq: number;
+  sch_delay: number;
+}
+
+export interface OdRoutesResponse {
+  name: string;
+  count: number;
+  pairs: OdRoute[];
+}
+
+export async function fetchOdRoutes(): Promise<OdRoutesResponse> {
+  const res = await fetch(`${BASE}/routes/od`);
   return res.json();
 }

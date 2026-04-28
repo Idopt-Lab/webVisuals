@@ -28,6 +28,7 @@ function Nav({ year, onYearChange, metric, onMetricChange, mapType, onMapTypeCha
           >
             <option value="counties" className="bg-gray-900 text-white">Counties</option>
             <option value="air_routes" className="bg-gray-900 text-white">Air Routes (T100)</option>
+            <option value="od_routes" className="bg-gray-900 text-white">OD List</option>
             <option value="road_routes" className="bg-gray-900 text-white">Road Routes (Soon)</option>
           </select>
         </div>
